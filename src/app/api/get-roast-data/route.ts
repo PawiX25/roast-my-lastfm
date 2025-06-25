@@ -35,6 +35,8 @@ const removeUnwantedFieldsRecursively = (obj: any): any => {
                 newObj[key] = removeUnwantedFieldsRecursively(restOfBio);
             } else if ((key === 'tags' || key === 'toptags') && value && value.tag && Array.isArray(value.tag)) {
                 newObj[key] = value.tag.slice(0, 15).map((t: any) => t.name).join(', ');
+            } else if (key === 'summary' && typeof value === 'string') {
+                newObj[key] = value.replace(/<a href="[^"]*">Read more on Last\.fm<\/a>/, '').trim();
             } else {
                 newObj[key] = removeUnwantedFieldsRecursively(value);
             }
