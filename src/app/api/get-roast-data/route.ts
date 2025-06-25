@@ -18,6 +18,22 @@ const createApiSig = (params: { [key: string]: string }) => {
     return createHash('md5').update(stringToSign, 'utf-8').digest('hex');
 };
 
+const removeImageRecursively = (obj: any): any => {
+    if (Array.isArray(obj)) {
+        return obj.map(removeImageRecursively);
+    }
+    if (obj && typeof obj === 'object') {
+        const newObj: { [key: string]: any } = {};
+        for (const key in obj) {
+            if (key !== 'image') {
+                newObj[key] = removeImageRecursively(obj[key]);
+            }
+        }
+        return newObj;
+    }
+    return obj;
+};
+
 const makeApiCall = async (params: { [key: string]: any }, isSigned = false) => {
     const queryParams: { [key: string]: string } = { ...params };
 
@@ -41,7 +57,7 @@ const makeApiCall = async (params: { [key: string]: any }, isSigned = false) => 
         console.error(`Last.fm API error for method ${params.method}:`, data.message);
         throw new Error(data.message);
     }
-    return data;
+    return removeImageRecursively(data);
 }
 
 export async function GET(request: NextRequest) {
