@@ -20,13 +20,23 @@ const createApiSig = (params: { [key: string]: string }) => {
 
 const removeUnwantedFieldsRecursively = (obj: any): any => {
     if (Array.isArray(obj)) {
-        return obj.map(removeUnwantedFieldsRecursively);
+        return obj.map(item => removeUnwantedFieldsRecursively(item));
     }
     if (obj && typeof obj === 'object') {
         const newObj: { [key: string]: any } = {};
         for (const key in obj) {
-            if (key !== 'image' && key !== 'similar') {
-                newObj[key] = removeUnwantedFieldsRecursively(obj[key]);
+            if (['image', 'similar', 'streamable', 'mbid', 'ontour', 'url'].includes(key)) {
+                continue;
+            }
+
+            const value = obj[key];
+            if (key === 'bio' && value && typeof value === 'object') {
+                const { content, ...restOfBio } = value as any;
+                newObj[key] = removeUnwantedFieldsRecursively(restOfBio);
+            } else if ((key === 'tags' || key === 'toptags') && value && value.tag && Array.isArray(value.tag)) {
+                newObj[key] = value.tag.slice(0, 15).map((t: any) => t.name).join(', ');
+            } else {
+                newObj[key] = removeUnwantedFieldsRecursively(value);
             }
         }
         return newObj;
@@ -35,7 +45,7 @@ const removeUnwantedFieldsRecursively = (obj: any): any => {
 };
 
 const makeApiCall = async (params: { [key: string]: any }, isSigned = false) => {
-    const queryParams: { [key: string]: string } = { ...params };
+    const queryParams: { [key: string]: any } = { ...params };
 
     if (isSigned) {
         const signatureParams: { [key: string]: string } = {};
@@ -136,12 +146,19 @@ export async function GET(request: NextRequest) {
 
         const artistsWithDetails = topArtists.slice(0, 5).map((artist: any, index: number) => {
             const details = artistDetailsResponses[index][0]?.artist;
-            const tags = artistDetailsResponses[index][1]?.toptags;
-            return {
+            const tagsData = artistDetailsResponses[index][1];
+            
+            const finalArtist = {
                 ...artist,
-                details: details,
-                tags: tags,
+                ...details,
+                playcount: artist.playcount, 
             };
+            
+            if (finalArtist && tagsData?.toptags) {
+                finalArtist.tags = tagsData.toptags;
+            }
+
+            return finalArtist;
         });
 
         const roastData = {
