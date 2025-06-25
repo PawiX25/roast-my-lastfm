@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { cookies } from 'next/headers';
 
-const apiKey = process.env.NEXT_PUBLIC_LASTFM_API_KEY;
+const apiKey = process.env.LASTFM_API_KEY;
 const sharedSecret = process.env.LASTFM_SHARED_SECRET;
 const lastFmApiUrl = "https://ws.audioscrobbler.com/2.0/";
 
