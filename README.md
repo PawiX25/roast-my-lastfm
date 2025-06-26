@@ -1,45 +1,88 @@
 # Roast My Last.fm
 
-This project is a web application that humorously roasts a user's music taste based on their Last.fm listening history.
+A brutally honest AI that judges your music taste based on your Last.fm listening history. Think you have good taste? Think again.
+
+## What is this?
+
+This is a web application that connects to your Last.fm account and delivers a personalized, snarky roast of your music preferences. Inspired by [Pudding.cool's "Judge My Music"](https://pudding.cool/2021/10/judge-my-music/) but with extra sass and AI-powered burns.
+
+Unlike generic music recommendation engines that try to be nice, this app is designed to be your worst music critic - the kind that makes you question your life choices and wonder if you really *do* have terrible taste.
 
 ## How it works
 
-1.  **Authentication**: Users log in with their Last.fm account to grant the application read-only access to their listening data.
-2.  **Data Fetching**: The application fetches the user's top artists, tracks, and other listening statistics from the Last.fm API.
-3.  **The Roast**: An "AI" (currently a set of logic on the backend) analyzes the data and generates a humorous, judgmental critique of the user's music preferences.
+1. **Last.fm Authentication**: Connect your Last.fm account to grant read-only access to your listening data
+2. **Data Analysis**: The app fetches your top artists, tracks, albums, recent plays, loved tracks, and listening patterns
+3. **Interactive Roasting**: A conversational AI asks you probing questions about your music habits
+4. **The Verdict**: Get a final, devastating assessment of your taste with a brutal 1-10 rating
+
+## Features
+
+- **Full Last.fm Integration**: Comprehensive data fetching including top artists/tracks/albums, recent plays, loved tracks, weekly charts, and user tags
+- **Interactive Conversation**: Multi-step roasting process with different question types:
+  - **Guilty Pleasure Detection**: Pick your most embarrassing album from your top plays
+  - **Multiple Choice Confessions**: Answer probing questions about why you listen to certain songs
+  - **Fan-O-Meter Slider**: Rate how deep your fandom really goes for your top artists
+- **AI-Powered Roasts**: Uses AI to generate personalized, witty burns based on your specific listening data
+- **Beautiful UI**: Modern, dark interface with smooth animations and engaging interactions
+- **Secure**: Session-based authentication with httpOnly cookies
+
+## Tech Stack
+
+- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
+- **Backend**: Next.js API routes with secure Last.fm authentication
+- **AI**: Hackclub AI API for generating personalized roasts
+- **Authentication**: Last.fm OAuth with MD5 signature verification
+- **Styling**: Tailwind CSS with custom dark theme and smooth animations
 
 ## Getting Started
 
-To run the development server:
+### Prerequisites
 
+You'll need a Last.fm API account:
+1. Go to [Last.fm API](https://www.last.fm/api/account/create)
+2. Create an application to get your API key and shared secret
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/PawiX25/roast-my-lastfm.git
+cd roast-my-lastfm
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Create a `.env.local` file in the root directory:
+```env
+LASTFM_API_KEY=your_api_key_here
+LASTFM_SHARED_SECRET=your_shared_secret_here
+```
+
+4. Run the development server:
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-### Prerequisites
+## How the Roasting Works
 
-You will need a Last.fm API key and shared secret. Create a `.env.local` file in the root of the project and add the following:
+The app uses a sophisticated multi-step process:
 
-```
-NEXT_PUBLIC_LASTFM_API_KEY=your_api_key_here
-LASTFM_SHARED_SECRET=your_shared_secret_here
-```
+1. **Data Collection**: Fetches 10+ different data points from Last.fm including top artists with detailed info, tracks, albums, recent plays, loved tracks, weekly charts, and user tags
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Question Generation**: AI generates contextual questions based on your specific artists and songs, making each roast unique
 
-## Learn More
+3. **Interactive Elements**: 
+   - Image-based choices for album selection
+   - Slider interactions for rating fandom levels
+   - Multiple choice questions about listening habits
 
-To learn more about Next.js, take a look at the following resources:
+4. **Final Roast**: AI analyzes all your data and conversation responses to deliver a personalized, savage critique with a numerical rating
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Why This Exists
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Because [Pudding.cool's music judge](https://pudding.cool/2021/10/judge-my-music/) doesn't work (at least for me using Spotify).
