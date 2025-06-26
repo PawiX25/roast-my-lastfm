@@ -25,7 +25,7 @@ const removeUnwantedFieldsRecursively = (obj: any): any => {
     if (obj && typeof obj === 'object') {
         const newObj: { [key: string]: any } = {};
         for (const key in obj) {
-            if (['image', 'similar', 'streamable', 'ontour', 'url'].includes(key)) {
+            if (['similar', 'streamable', 'ontour', 'url'].includes(key)) {
                 continue;
             }
 
