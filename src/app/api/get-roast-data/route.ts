@@ -201,34 +201,64 @@ const cleanForLLM = (obj: any): any => {
 };
 
 const questionModules: { [key: string]: (roastData: any) => Promise<any> | any } = {
-    'guilty_pleasure': (roastData: any) => {
+    'image_choice': async (roastData: any) => {
         const topAlbums = roastData.topAlbums?.album;
         if (!topAlbums || topAlbums.length < 4) return null;
-        
-        const sortedAlbums = [...topAlbums].sort((a: any, b: any) => parseInt(b.playcount) - parseInt(a.playcount));
-        const guiltyPleasure = sortedAlbums[0];
-        const otherAlbums = sortedAlbums.slice(1, 4).sort(() => 0.5 - Math.random()); 
-        const choices = [guiltyPleasure, ...otherAlbums].sort(() => 0.5 - Math.random());
 
-        return {
-            nextStep: 'handle_guilty_pleasure',
-            botMessage: "Alright, time for a confession. Which one of these is your real guilty pleasure? No one's watching. (Except me).",
-            choices: choices.map((album: any) => {
-                const imageUrl = album.image?.find((img: any) => img.size === 'extralarge')?.['#text'] || album.image?.find((img: any) => img.size === 'large')?.['#text'] || '';
-                return {
-                    text: `${album.name} by ${album.artist.name}`,
-                    value: album.mbid,
-                    imageUrl: imageUrl
-                }
-            })
+        const choices = [...topAlbums].sort(() => 0.5 - Math.random()).slice(0, 4);
+        const albumForPrompt = choices.map(a => `"${a.name}" by ${a.artist.name}`).join(', ');
+
+        const fallback = {
+            type: 'image_choice',
+            nextStep: 'handle_question',
+            botMessage: `I see you listen to these albums. Which one is your secret shame?`,
+            choices: choices.map((album: any) => ({
+                text: `${album.name} by ${album.artist.name}`,
+                value: album.name,
+                imageUrl: album.image?.find((img: any) => img.size === 'extralarge')?.['#text'] || ''
+            }))
         };
+
+        try {
+            const systemPrompt = `You are JudgeBot. A user listens to these albums: ${albumForPrompt}. Generate a snarky, condescending, multiple-choice question that forces the user to pick one. The choices are the albums themselves. Format your response *only* as a valid JSON object with the key "question". Example: {"question": "Which of these masterpieces of bad taste do you secretly cherish?"}`;
+            
+            const aiResponse = await fetch('https://ai.hackclub.com/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    response_format: { type: "json_object" },
+                    messages: [{ "role": "system", "content": systemPrompt }]
+                })
+            });
+
+            if (!aiResponse.ok) return fallback;
+
+            const aiData = await aiResponse.json();
+            const content = JSON.parse(aiData.choices[0].message.content);
+
+            if (!content.question) return fallback;
+
+            return {
+                type: 'image_choice',
+                nextStep: 'handle_question',
+                botMessage: content.question,
+                choices: choices.map((album: any) => ({
+                    text: `${album.name} by ${album.artist.name}`,
+                    value: album.name,
+                    imageUrl: album.image?.find((img: any) => img.size === 'extralarge')?.['#text'] || ''
+                }))
+            };
+        } catch (e) {
+            return fallback;
+        }
     },
     'mcq': async (roastData: any) => {
         const topTrack = roastData.topTracks?.track?.[Math.floor(Math.random() * 10)];
         if (!topTrack) return null;
 
         const fallback = {
-             nextStep: 'handle_mcq_confession',
+            type: 'mcq',
+            nextStep: 'handle_question',
             botMessage: `You listen to '${topTrack.name}' by ${topTrack.artist.name} a lot. What's the usual vibe?`,
             choices: [
                 { text: "Staring dramatically out a rainy window.", value: "A" },
@@ -261,7 +291,8 @@ const questionModules: { [key: string]: (roastData: any) => Promise<any> | any }
                 }
 
                 return {
-                    nextStep: 'handle_mcq_confession',
+                    type: 'mcq',
+                    nextStep: 'handle_question',
                     botMessage: content.question,
                     choices: content.choices.map((choice: string, index: number) => ({
                         text: choice,
@@ -281,11 +312,11 @@ const questionModules: { [key: string]: (roastData: any) => Promise<any> | any }
 
         const fallback = {
             type: 'slider',
-            nextStep: 'handle_fan_o_meter_slider',
+            nextStep: 'handle_question',
             botMessage: `So you listen to ${topArtist.name} a lot. On a scale of 0 to 100, how deep does your fandom *really* go?`,
             choices: [
-                { text: `0: I only know their most popular song`, value: '0' },
-                { text: `100: I have a tattoo of their face`, value: '100' },
+                { text: `0: Casual Listener`, value: '0' },
+                { text: `100: Superfan`, value: '100' },
             ]
         };
 
@@ -312,7 +343,7 @@ const questionModules: { [key: string]: (roastData: any) => Promise<any> | any }
 
             return {
                 type: 'slider',
-                nextStep: 'handle_fan_o_meter_slider',
+                nextStep: 'handle_question',
                 botMessage: content.question,
                 choices: [
                     { text: content.label_0, value: '0' },
@@ -326,7 +357,7 @@ const questionModules: { [key: string]: (roastData: any) => Promise<any> | any }
 };
 
 const questionViabilityChecks: { [key: string]: (roastData: any) => boolean } = {
-    'guilty_pleasure': (roastData) => roastData.topAlbums?.album?.length >= 4,
+    'image_choice': (roastData) => roastData.topAlbums?.album?.length >= 4,
     'mcq': (roastData) => roastData.topTracks?.track?.length >= 1,
     'slider': (roastData) => roastData.topArtists?.artist?.length >= 1,
 };
@@ -344,6 +375,93 @@ async function getNextQuestion(questionQueue: string[], roastData: any) {
     }
     return null;
 }
+
+async function getIntroMessage(roastData: any) {
+    const fallback = "Analyzing your listening history... lol... omg... okay hold up.";
+    try {
+        const systemPrompt = `You are "JudgeBot", a snarky, satirical, and brutally honest AI that judges people's music taste. You are about to analyze a user's listening history. Generate a short, funny, "I'm looking at your data now" message to the user. Keep it to a single, punchy sentence. For example: "Firing up my judgment machine...", "Accessing your questionable life choices...", or "Let's see what we're working with here...". Do not use hashtags. Your response must be plain text only.`;
+        const cleanedData = cleanForLLM(roastData);
+        const userPrompt = `Here is the user's data, just for context (you don't need to reference it directly): ${JSON.stringify(cleanedData)}. Now, give me that intro message.`;
+    
+        const aiResponse = await fetch('https://ai.hackclub.com/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: [
+                    { "role": "system", "content": systemPrompt },
+                    { "role": "user", "content": userPrompt }
+                ]
+            })
+        });
+        if (!aiResponse.ok) return fallback;
+        const aiData = await aiResponse.json();
+        const message = aiData.choices[0].message.content;
+        return message || fallback;
+    } catch(e) {
+        return fallback;
+    }
+}
+
+async function getNoQuestionsMessage() {
+    const fallback = "You know what, I can't even be bothered to roast you properly. Just go.";
+    try {
+        const systemPrompt = `You are "JudgeBot", a snarky AI. A user's music data is so empty or basic that you can't even generate a single question to make fun of them. Generate a short, witty, dismissive message telling them to come back when they have more interesting taste. Keep it to 1-2 sentences. Your response must be plain text only.`;
+        
+        const aiResponse = await fetch('https://ai.hackclub.com/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: [{ "role": "system", "content": systemPrompt }]
+            })
+        });
+        if (!aiResponse.ok) return fallback;
+        const aiData = await aiResponse.json();
+        return aiData.choices[0].message.content || fallback;
+    } catch (e) {
+        return fallback;
+    }
+}
+
+async function getCompleteMessage() {
+    const fallback = "That's right. Now go think about what you've done.";
+    try {
+        const systemPrompt = `You are "JudgeBot", a snarky AI. You have just delivered your final, devastating roast of a user's music taste. They have acknowledged their shame. Generate a final, one-sentence, dismissive "get out of my sight" type of message. For example: "That's right. Now go think about what you've done.", or "Don't let the door hit you on the way out." Your response must be plain text only.`;
+        
+        const aiResponse = await fetch('https://ai.hackclub.com/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: [{ "role": "system", "content": systemPrompt }]
+            })
+        });
+        if (!aiResponse.ok) return fallback;
+        const aiData = await aiResponse.json();
+        return aiData.choices[0].message.content || fallback;
+    } catch (e) {
+        return fallback;
+    }
+}
+
+async function getAIResponse(history: any[], roastData: any, lastQuestion: any, lastAnswer: any) {
+    const systemPrompt = `You are "JudgeBot", a snarky, satirical, and brutally honest AI that judges people's music taste. Your tone is condescending, witty, and a bit of an elitist music snob. You make fun of genres, artist names, and track titles. Keep your responses short, punchy, and under 2-3 sentences. Do not use hashtags. Your responses must be plain text only.`;
+    const cleanedData = cleanForLLM(roastData);
+    const userPrompt = `My last interaction was: I was asked "${lastQuestion.botMessage}", and I answered with "${lastAnswer}". Based on my answer, the context of our conversation so far, and my music taste data, give me a response. My music data: ${JSON.stringify(cleanedData)}. Conversation History: ${JSON.stringify(history)}.`;
+    
+    const aiResponse = await fetch('https://ai.hackclub.com/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            messages: [
+                { "role": "system", "content": systemPrompt },
+                { "role": "user", "content": userPrompt }
+            ]
+        })
+    });
+    if (!aiResponse.ok) return "Wow, I'm speechless. And not in a good way.";
+    const aiData = await aiResponse.json();
+    return aiData.choices[0].message.content;
+}
+
 
 async function getFinalRoast(roastData: any, history: any, initialResponse: string) {
     const systemPrompt = `You are "JudgeBot", a snarky, satirical, and brutally honest AI that judges people's music taste. Your tone is condescending, witty, and a bit of an elitist music snob. You make fun of genres, artist names, and track titles. Keep your responses short, punchy, and under 2-3 sentences. Do not use hashtags. Your responses must be plain text only.`;
@@ -376,98 +494,75 @@ export async function POST(request: NextRequest) {
 
     try {
         if (step === 'ready' && choice === 'start') {
+            const introMessage = await getIntroMessage(roastData);
             return NextResponse.json({
                 nextStep: 'typing_intro',
-                botMessage: "Analyzing your listening history... lol... omg... okay hold up.",
-                choices: [], 
+                botMessage: introMessage,
+                choices: [],
             });
         }
         
         if (step === 'typing_intro') {
-            const sliderModule = questionModules['slider'];
-            const sliderQuestion = await sliderModule(roastData);
-
-            if (!sliderQuestion) {
+            const availableQuestions = Object.keys(questionModules).filter(key => {
+                const check = questionViabilityChecks[key];
+                return check ? check(roastData) : true;
+            });
+            
+            const questionQueue = availableQuestions.sort(() => 0.5 - Math.random());
+            const nextQuestion = await getNextQuestion(questionQueue, roastData);
+            
+            if (!nextQuestion) {
+                 const noQuestionsMessage = await getNoQuestionsMessage();
                  return NextResponse.json({
                     nextStep: 'final',
-                    botMessage: "You know what, I can't even be bothered to roast you properly. Just go.",
+                    botMessage: noQuestionsMessage,
                     choices: [{ text: "Ouch.", value: "end" }]
                 });
             }
             
-            return NextResponse.json(sliderQuestion);
+            return NextResponse.json(nextQuestion);
         }
 
-        let cannedResponse = "";
-        let nextStepIsFinal = true;
-        let currentQuestionQueue = questionQueue || [];
-
-        if (step === 'handle_guilty_pleasure' || step === 'handle_mcq_confession') {
-            nextStepIsFinal = currentQuestionQueue.length === 0;
-            if (step === 'handle_guilty_pleasure') {
-                const topAlbum = roastData.topAlbums?.album?.find((a:any) => a['@attr']?.rank === '1') || roastData.topAlbums?.album?.[0];
-                if (topAlbum) {
-                    cannedResponse = choice === topAlbum.mbid
-                        ? "AHA! I KNEW IT! All that other stuff is just a front for your love of pure, unadulterated pop trash."
-                        : "Oh, playing coy? I don't believe you. You definitely cry to that other album in secret. Whatever.";
-                }
-            } else {
-                const responses: { [key: string]: string } = {
-                    "A": "Staring out a window? How original. I'm sure the rain is very impressed with your profound sadness.",
-                    "B": "The main character, huh? Let me guess, the movie's a low-budget indie film that only you understand. Groundbreaking.",
-                    "C": "'Deep thoughts'? You mean rehearsing arguments in the shower? We all know what that playlist is for.",
-                    "D": "Sure, 'just the beat'. That's what they all say. That's the musical equivalent of 'I read Playboy for the articles'."
-                };
-                cannedResponse = responses[choice] || "I see you're trying to be clever. You're not.";
+        if (step === 'handle_question') {
+            const lastQuestion = history[history.length - 1];
+            let answerText = choice;
+            if (lastQuestion.choices) {
+                 const choiceObject = lastQuestion.choices.find((c:any) => c.value === choice);
+                 if (choiceObject) answerText = choiceObject.text;
             }
-        }
 
-        if (step === 'handle_fan_o_meter_slider') {
-            nextStepIsFinal = false;
-            const value = parseInt(choice, 10);
-            if (value <= 30) {
-                cannedResponse = "A bandwagon fan, I see. You probably just heard them on TikTok. How dreadfully predictable.";
-            } else if (value <= 70) {
-                cannedResponse = "The casual listener. You enjoy the music, but you're not about to, you know, put in any effort. Commendable laziness.";
-            } else {
-                cannedResponse = "Wow, a true devotee. It must be exhausting defending their mediocre early albums to anyone who will listen.";
-            }
-            const remainingKeys = ['guilty_pleasure', 'mcq', 'mcq'].filter(key => {
-                const check = questionViabilityChecks[key];
-                return check ? check(roastData) : false;
-            });
-            currentQuestionQueue = remainingKeys.sort(() => 0.5 - Math.random());
-        }
-        
-        if (cannedResponse) {
-            if (nextStepIsFinal) {
-                const finalRoast = await getFinalRoast(roastData, history, cannedResponse);
-                return NextResponse.json({
+            const aiResponse = await getAIResponse(history, roastData, lastQuestion, answerText);
+            
+            if (questionQueue.length === 0) {
+                 const finalRoast = await getFinalRoast(roastData, history, aiResponse);
+                 return NextResponse.json({
                     nextStep: 'final',
-                    botMessage: `${cannedResponse}\n\n${finalRoast}`,
+                    botMessage: `${aiResponse}\n\n${finalRoast}`,
                     choices: [{text: "I... I need a moment.", value: "end"}]
                 });
-            } else {
-                const nextQuestion = await getNextQuestion(currentQuestionQueue, roastData);
-                 if (!nextQuestion) {
-                    const finalRoast = await getFinalRoast(roastData, history, cannedResponse);
-                     return NextResponse.json({
-                        nextStep: 'final',
-                        botMessage: `${cannedResponse}\n\n${finalRoast}`,
-                        choices: [{text: "I... I need a moment.", value: "end"}]
-                    });
-                }
-                return NextResponse.json({
-                    ...nextQuestion,
-                    botMessage: `${cannedResponse}\n\n${nextQuestion.botMessage}`,
+            }
+
+            const nextQuestion = await getNextQuestion(questionQueue, roastData);
+             if (!nextQuestion) {
+                const finalRoast = await getFinalRoast(roastData, history, aiResponse);
+                 return NextResponse.json({
+                    nextStep: 'final',
+                    botMessage: `${aiResponse}\n\n${finalRoast}`,
+                    choices: [{text: "I... I need a moment.", value: "end"}]
                 });
             }
-        }
 
+            return NextResponse.json({
+                ...nextQuestion,
+                botMessage: `${aiResponse}\n\n${nextQuestion.botMessage}`,
+            });
+        }
+        
         if (step === 'final') {
+             const completeMessage = await getCompleteMessage();
              return NextResponse.json({
                 nextStep: 'complete',
-                botMessage: "That's right. Now go think about what you've done.",
+                botMessage: completeMessage,
                 choices: []
             });
         }
