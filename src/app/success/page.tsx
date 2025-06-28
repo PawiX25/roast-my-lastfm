@@ -123,7 +123,7 @@ export default function SuccessPage() {
 
     const renderContent = () => {
         if (isLoading && conversation.step === 'initial') {
-            return <p>Getting your data... this better be good.</p>;
+            return <p className="animate-fade-in-up">Getting your data... this better be good.</p>;
         }
         if (error) {
             return (
@@ -136,7 +136,7 @@ export default function SuccessPage() {
 
         if (conversation.step === 'ready') {
             return (
-                <>
+                <div className="flex flex-col items-center animate-fade-in-up">
                     <p className="mt-8 text-lg text-neutral-700">
                         Alright, I've seen your data. Ready to face the music?
                     </p>
@@ -147,14 +147,14 @@ export default function SuccessPage() {
                     >
                         {isLoading ? 'Thinking of a good one...' : 'Roast Me!'}
                     </button>
-                </>
+                </div>
             )
         }
         
         if (conversation.step === 'complete') {
              return (
-                 <div className="p-4 bg-[var(--cool-gray)] rounded-lg text-center text-lg w-full">
-                    <p>{conversation.botMessage}</p>
+                 <div className="p-6 bg-[var(--cool-gray)] rounded-lg text-center text-xl w-full max-w-3xl animate-fade-in-up shadow-md">
+                    <p className="text-neutral-800">{conversation.botMessage}</p>
                 </div>
              )
         }
@@ -268,10 +268,12 @@ export default function SuccessPage() {
 
     return (
         <main className="flex flex-col items-center justify-center min-h-screen p-4">
-            <div className="flex flex-col items-center text-center gap-8 w-full">
-                <h1 className="text-4xl font-bold">
-                    Welcome, <span className="font-bold text-[var(--premium-red-text)]">{userName}</span>
-                </h1>
+            <div className="flex flex-col items-center justify-center text-center gap-8 w-full flex-1">
+                {conversation.step !== 'complete' && (
+                    <h1 className="text-4xl font-bold">
+                        Welcome, <span className="font-bold text-[var(--premium-red-text)]">{userName}</span>
+                    </h1>
+                )}
                 {renderContent()}
             </div>
         </main>
