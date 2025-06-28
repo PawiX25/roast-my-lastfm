@@ -34,18 +34,27 @@ export default function SuccessPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [sliderValue, setSliderValue] = useState(50);
+    const [showChoices, setShowChoices] = useState(false);
     
     const isTypingStep = useRef(false);
 
     useEffect(() => {
-        if (conversation.step === 'typing_intro' && !isTypingStep.current) {
-            isTypingStep.current = true;
-            setTimeout(() => {
-                handleChoice('next'); 
-                isTypingStep.current = false;
-            }, 2500);
+        if (conversation.botMessage) {
+            setShowChoices(false);
         }
-    }, [conversation.step]);
+    }, [conversation.botMessage]);
+
+    useEffect(() => {
+        const choicesWithImages = conversation.choices.filter(c => c.imageUrl);
+        if (choicesWithImages.length > 0) {
+            choicesWithImages.forEach(choice => {
+                if (choice.imageUrl) {
+                    const img = new Image();
+                    img.src = choice.imageUrl;
+                }
+            });
+        }
+    }, [conversation.choices]);
 
     const handleInitialFetch = async () => {
         setIsLoading(true);
@@ -153,12 +162,24 @@ export default function SuccessPage() {
         if (conversation.botMessage) {
             const hasImageChoices = conversation.choices.some(c => c.imageUrl);
 
+            const onTypingDone = () => {
+                if (conversation.step === 'typing_intro') {
+                    handleChoice('next');
+                } else {
+                    setShowChoices(true);
+                }
+            };
+
             return (
                  <div className="w-full max-w-4xl flex flex-col items-center gap-6">
                     <div className="p-4 bg-[var(--cool-gray)] rounded-lg text-center text-lg w-full min-h-[6rem] flex items-center justify-center">
                         <TypeAnimation
                             key={conversation.botMessage}
-                            sequence={[conversation.botMessage]}
+                            sequence={[
+                                conversation.botMessage || '',
+                                500,
+                                onTypingDone
+                            ]}
                             wrapper="p"
                             speed={70}
                             className="whitespace-pre-wrap"
@@ -168,8 +189,8 @@ export default function SuccessPage() {
 
                     {isLoading && <div className="mt-6">...</div>}
 
-                    {!isLoading && conversation.type === 'slider' && conversation.choices.length === 2 && (
-                        <div className="flex flex-col items-center gap-6 w-full pt-4">
+                    {!isLoading && showChoices && conversation.type === 'slider' && conversation.choices.length === 2 && (
+                        <div className="flex flex-col items-center gap-6 w-full pt-4 animate-fade-in-up">
                             <p 
                                 className="text-8xl font-black text-[var(--premium-red-text)] tabular-nums"
                                 style={{textShadow: '0 0 25px rgba(185, 49, 79, 0.4)'}}
@@ -199,11 +220,15 @@ export default function SuccessPage() {
                         </div>
                     )}
 
-                    {!isLoading && conversation.type !== 'slider' && conversation.choices.length > 0 && (
-                        <div className={`mt-6 flex justify-center gap-4 ${hasImageChoices ? 'flex-row flex-wrap items-end' : 'flex-col sm:flex-row'}`}>
-                            {conversation.choices.map((choice) => (
+                    {!isLoading && showChoices && conversation.type !== 'slider' && conversation.choices.length > 0 && (
+                        <div className={`mt-6 flex justify-center gap-4 ${hasImageChoices ? 'flex-row flex-wrap items-baseline' : 'flex-col sm:flex-row'}`}>
+                            {conversation.choices.map((choice, index) => (
                                 hasImageChoices ? (
-                                    <div key={choice.value} className="flex flex-col items-center gap-2">
+                                    <div 
+                                        key={choice.value} 
+                                        className="flex flex-col items-center gap-2 animate-fade-in-up"
+                                        style={{ animationDelay: `${index * 100}ms`, opacity: 0 }}
+                                    >
                                         {choice.imageUrl ? (
                                             <img 
                                                 src={choice.imageUrl} 
@@ -225,7 +250,8 @@ export default function SuccessPage() {
                                      <button
                                         key={choice.value}
                                         onClick={() => handleChoice(choice.value)}
-                                        className="px-5 py-2 bg-neutral-300 text-neutral-800 font-semibold rounded-lg hover:bg-neutral-400 disabled:bg-neutral-200 transition-colors"
+                                        className="px-5 py-2 bg-neutral-300 text-neutral-800 font-semibold rounded-lg hover:bg-neutral-400 disabled:bg-neutral-200 transition-colors animate-fade-in-up"
+                                        style={{ animationDelay: `${index * 100}ms`, opacity: 0 }}
                                     >
                                         {choice.text}
                                     </button>

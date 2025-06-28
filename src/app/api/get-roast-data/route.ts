@@ -206,7 +206,6 @@ const questionModules: { [key: string]: (roastData: any) => Promise<any> | any }
         if (!topAlbums || topAlbums.length < 4) return null;
 
         const choices = [...topAlbums].sort(() => 0.5 - Math.random()).slice(0, 4);
-        const albumForPrompt = choices.map(a => `"${a.name}" by ${a.artist.name}`).join(', ');
 
         const fallback = {
             type: 'image_choice',
@@ -220,7 +219,7 @@ const questionModules: { [key: string]: (roastData: any) => Promise<any> | any }
         };
 
         try {
-            const systemPrompt = `You are JudgeBot. A user listens to these albums: ${albumForPrompt}. Generate a snarky, condescending, multiple-choice question that forces the user to pick one. The choices are the albums themselves. Format your response *only* as a valid JSON object with the key "question". Example: {"question": "Which of these masterpieces of bad taste do you secretly cherish?"}`;
+            const systemPrompt = `You are JudgeBot. A user will be shown four of their most-played album covers as choices. Your task is to generate a snarky, condescending question that forces the user to pick one of the albums. **Do not mention any album titles or artist names in your question**, as the user will see them visually. Just ask the question. Format your response *only* as a valid JSON object with the key "question". Example: {"question": "Alright, which of these is your go-to for convincing people you have 'deep' taste?"}`;
             
             const aiResponse = await fetch('https://ai.hackclub.com/chat/completions', {
                 method: 'POST',
