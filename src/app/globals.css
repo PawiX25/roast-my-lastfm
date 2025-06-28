@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --premium-red: #B9314F;
+    --warm-off-white: #FBF9F1;
+    --cool-gray: #E5E1DA;
+    --text-color: #363636;
+    --premium-red-text: #B9314F;
+  }
+  body {
+    @apply bg-[var(--warm-off-white)] text-[var(--text-color)];
+    font-family: 'Montserrat', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}

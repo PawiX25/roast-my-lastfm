@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react';
+import { TypeAnimation } from 'react-type-animation';
 
 type Choice = {
     text: string;
@@ -117,9 +118,9 @@ export default function SuccessPage() {
         }
         if (error) {
             return (
-                <div className="mt-8 p-4 bg-neutral-800 border border-red-500/50 rounded-lg text-left text-sm max-w-4xl w-full">
-                    <p className="font-bold text-red-500">Error:</p>
-                    <p className="mt-2 text-neutral-300">{error}</p>
+                <div className="mt-8 p-4 bg-[var(--cool-gray)] border border-[var(--premium-red)]/50 rounded-lg text-left text-sm max-w-4xl w-full">
+                    <p className="font-bold text-[var(--premium-red-text)]">Error:</p>
+                    <p className="mt-2 text-neutral-700">{error}</p>
                 </div>
             );
         }
@@ -127,13 +128,13 @@ export default function SuccessPage() {
         if (conversation.step === 'ready') {
             return (
                 <>
-                    <p className="mt-8 text-lg text-neutral-300">
+                    <p className="mt-8 text-lg text-neutral-700">
                         Alright, I've seen your data. Ready to face the music?
                     </p>
                     <button
                         onClick={() => handleChoice('start')}
                         disabled={isLoading}
-                        className="mt-6 px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 disabled:bg-neutral-600 transition-colors"
+                        className="mt-6 px-6 py-3 bg-[var(--premium-red)] text-white font-semibold rounded-lg hover:bg-opacity-90 disabled:bg-neutral-400 transition-colors"
                     >
                         {isLoading ? 'Thinking of a good one...' : 'Roast Me!'}
                     </button>
@@ -143,7 +144,7 @@ export default function SuccessPage() {
         
         if (conversation.step === 'complete') {
              return (
-                 <div className="p-4 bg-neutral-800 rounded-lg text-center text-lg w-full">
+                 <div className="p-4 bg-[var(--cool-gray)] rounded-lg text-center text-lg w-full">
                     <p>{conversation.botMessage}</p>
                 </div>
              )
@@ -154,8 +155,15 @@ export default function SuccessPage() {
 
             return (
                  <div className="w-full max-w-4xl flex flex-col items-center gap-6">
-                    <div className="p-4 bg-neutral-800 rounded-lg text-center text-lg w-full">
-                        <p className="whitespace-pre-wrap">{conversation.botMessage}</p>
+                    <div className="p-4 bg-[var(--cool-gray)] rounded-lg text-center text-lg w-full min-h-[6rem] flex items-center justify-center">
+                        <TypeAnimation
+                            key={conversation.botMessage}
+                            sequence={[conversation.botMessage]}
+                            wrapper="p"
+                            speed={70}
+                            className="whitespace-pre-wrap"
+                            cursor={true}
+                        />
                     </div>
 
                     {isLoading && <div className="mt-6">...</div>}
@@ -163,8 +171,8 @@ export default function SuccessPage() {
                     {!isLoading && conversation.type === 'slider' && conversation.choices.length === 2 && (
                         <div className="flex flex-col items-center gap-6 w-full pt-4">
                             <p 
-                                className="text-8xl font-black text-red-500 tabular-nums"
-                                style={{textShadow: '0 0 25px rgba(239, 68, 68, 0.4)'}}
+                                className="text-8xl font-black text-[var(--premium-red-text)] tabular-nums"
+                                style={{textShadow: '0 0 25px rgba(185, 49, 79, 0.4)'}}
                             >
                                 {sliderValue}
                             </p>
@@ -175,16 +183,16 @@ export default function SuccessPage() {
                                     max="100" 
                                     value={sliderValue}
                                     onChange={(e) => setSliderValue(parseInt(e.target.value, 10))}
-                                    className="w-full h-4 bg-neutral-800 rounded-full appearance-none cursor-pointer accent-red-600"
+                                    className="w-full h-4 bg-[var(--cool-gray)] rounded-full appearance-none cursor-pointer accent-[var(--premium-red)]"
                                 />
-                                <div className="flex justify-between text-sm text-neutral-400 mt-2">
+                                <div className="flex justify-between text-sm text-neutral-500 mt-2">
                                     <span className="w-2/5 text-left">{conversation.choices[0].text}</span>
                                     <span className="w-2/5 text-right">{conversation.choices[1].text}</span>
                                 </div>
                             </div>
                             <button
                                 onClick={() => handleChoice(sliderValue.toString())}
-                                className="px-12 py-4 text-xl font-bold text-white rounded-full bg-gradient-to-r from-red-500 to-red-700 shadow-lg hover:shadow-red-500/30 transform hover:scale-105 transition-all duration-300"
+                                className="px-12 py-4 text-xl font-bold text-white rounded-full bg-[var(--premium-red)] shadow-lg hover:shadow-red-500/30 transform hover:scale-105 transition-all duration-300"
                             >
                                 Submit Judgment
                             </button>
@@ -200,12 +208,12 @@ export default function SuccessPage() {
                                             <img 
                                                 src={choice.imageUrl} 
                                                 alt={choice.text}
-                                                className="w-40 h-40 object-cover rounded-md border-2 border-transparent hover:border-red-500 cursor-pointer transition-all"
+                                                className="w-40 h-40 object-cover rounded-md border-2 border-transparent hover:border-[var(--premium-red)] cursor-pointer transition-all"
                                                 onClick={() => handleChoice(choice.value)}
                                             />
                                         ) : (
                                             <div 
-                                                className="w-40 h-40 bg-neutral-700 rounded-md border-2 border-transparent hover:border-red-500 cursor-pointer transition-all flex items-center justify-center text-center p-2"
+                                                className="w-40 h-40 bg-neutral-200 rounded-md border-2 border-transparent hover:border-[var(--premium-red)] cursor-pointer transition-all flex items-center justify-center text-center p-2"
                                                 onClick={() => handleChoice(choice.value)}
                                             >
                                                 <span>No Cover Art</span>
@@ -217,7 +225,7 @@ export default function SuccessPage() {
                                      <button
                                         key={choice.value}
                                         onClick={() => handleChoice(choice.value)}
-                                        className="px-5 py-2 bg-neutral-700 text-white font-semibold rounded-lg hover:bg-neutral-600 disabled:bg-neutral-800 transition-colors"
+                                        className="px-5 py-2 bg-neutral-300 text-neutral-800 font-semibold rounded-lg hover:bg-neutral-400 disabled:bg-neutral-200 transition-colors"
                                     >
                                         {choice.text}
                                     </button>
@@ -233,10 +241,10 @@ export default function SuccessPage() {
     }
 
     return (
-        <main className="flex flex-col items-center justify-center min-h-screen bg-neutral-900 text-neutral-100 font-sans p-4">
+        <main className="flex flex-col items-center justify-center min-h-screen p-4">
             <div className="flex flex-col items-center text-center gap-8 w-full">
                 <h1 className="text-4xl font-bold">
-                    Welcome, <span className="font-bold text-red-500">{userName}</span>
+                    Welcome, <span className="font-bold text-[var(--premium-red-text)]">{userName}</span>
                 </h1>
                 {renderContent()}
             </div>
