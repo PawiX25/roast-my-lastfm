@@ -363,7 +363,7 @@ export default function SuccessPage() {
                     {isLoading && <div className="mt-6">...</div>}
 
                     {!isLoading && showChoices && conversation.type === 'slider' && conversation.choices.length === 2 && (
-                        <div className="flex flex-col items-center gap-6 w-full pt-4">
+                        <div className="flex flex-col items-center gap-6 w-full pt-4 animate-fade-in-up" style={{opacity:0}}>
                             <p 
                                 className="text-8xl font-black text-[var(--premium-red-text)] tabular-nums"
                                 style={{textShadow: '0 0 25px rgba(185, 49, 79, 0.4)'}}
@@ -381,7 +381,7 @@ export default function SuccessPage() {
                                 />
                                 <div className="flex justify-between text-sm text-neutral-500 mt-2">
                                     <span className="w-2/5 text-left">{conversation.choices[0].text}</span>
-                                    <span className="w-2/fiv'e text-right">{conversation.choices[1].text}</span>
+                                    <span className="w-2/5 text-right">{conversation.choices[1].text}</span>
                                 </div>
                             </div>
                             <button
@@ -399,7 +399,7 @@ export default function SuccessPage() {
                                 hasImageChoices ? (
                                     <div 
                                         key={choice.value} 
-                                        className="flex flex-col items-center gap-2"
+                                        className="flex flex-col items-center gap-2 animate-fade-in-up"
                                         style={{ animationDelay: `${index * 100}ms`, opacity: 0 }}
                                     >
                                         {choice.imageUrl ? (
@@ -423,7 +423,7 @@ export default function SuccessPage() {
                                      <button
                                         key={choice.value}
                                         onClick={() => handleChoice(choice.value)}
-                                        className="px-5 py-2 bg-neutral-300 text-neutral-800 font-semibold rounded-lg hover:bg-neutral-400 disabled:bg-neutral-200 transition-colors"
+                                        className="px-5 py-2 bg-neutral-300 text-neutral-800 font-semibold rounded-lg hover:bg-neutral-400 disabled:bg-neutral-200 transition-colors animate-fade-in-up"
                                         style={{ animationDelay: `${index * 100}ms`, opacity: 0 }}
                                     >
                                         {choice.text}
