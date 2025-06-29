@@ -483,9 +483,45 @@ async function getFinalRoast(roastData: any, history: any, initialResponse: stri
     return aiData.choices[0].message.content;
 }
 
+async function getSnarkyComment(name: string, artist: string) {
+    const fallback = "Ugh, this one. Of course.";
+    try {
+        const systemPrompt = `You are "JudgeBot", a snarky, satirical AI that judges music taste. Your tone is witty and condescending. A user is listening to a song or album. Generate a VERY short, one-sentence, brutally honest, and funny comment about it. Do not use hashtags. Your response must be plain text only. Be specific if you can, but a general insult is fine too.`;
+        const userPrompt = `The item is "${name}" by ${artist}. Give me the roast.`;
+
+        const aiResponse = await fetch('https://ai.hackclub.com/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: [
+                    { "role": "system", "content": systemPrompt },
+                    { "role": "user", "content": userPrompt }
+                ]
+            })
+        });
+
+        if (!aiResponse.ok) {
+            return NextResponse.json({ comment: fallback });
+        }
+
+        const aiData = await aiResponse.json();
+        const comment = aiData.choices[0].message.content;
+
+        return NextResponse.json({ comment: comment || fallback });
+
+    } catch (error: any) {
+        console.error("Error in POST /api/get-roast-data (getSnarkyComment):", error);
+        return NextResponse.json({ comment: fallback });
+    }
+}
+
 export async function POST(request: NextRequest) {
     const body = await request.json();
-    const { step, choice, user, roastData, history, questionQueue } = body;
+    const { step, choice, user, roastData, history, questionQueue, name, artist } = body;
+
+    if (name && artist) {
+        return getSnarkyComment(name, artist);
+    }
 
     if (!user || !roastData) {
         return NextResponse.json({ error: 'User and roastData are required.' }, { status: 400 });
