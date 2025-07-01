@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 const apiKey = process.env.LASTFM_API_KEY;
-const redirectUri = "http://localhost:3000/api/callback";
+const redirectUri = "https://roast-my-lastfm.vercel.app/api/callback";
 
 export function GET() {
   if (!apiKey) {
