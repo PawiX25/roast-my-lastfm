@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react';
 import { TypeAnimation } from 'react-type-animation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Suspense } from 'react';
 
 type Choice = {
     text: string;
@@ -27,7 +28,7 @@ type Conversation = {
     questionQueue?: string[];
 };
 
-export default function SuccessPage() {
+function SuccessPageInner() {
     const searchParams = useSearchParams();
     const userName = searchParams.get('user');
     const [conversation, setConversation] = useState<Conversation>({
@@ -452,5 +453,13 @@ export default function SuccessPage() {
                 </AnimatePresence>
             </div>
         </main>
+    )
+}
+
+export default function SuccessPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SuccessPageInner />
+        </Suspense>
     )
 } 

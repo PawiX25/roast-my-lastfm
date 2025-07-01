@@ -50,9 +50,11 @@ export async function GET(request: NextRequest) {
     
     const nextResponse = NextResponse.redirect(redirectUrl);
     
+    const hostHeader = request.headers.get("host") || "";
+    const isLocalhost = hostHeader.startsWith("localhost") || hostHeader.startsWith("127.0.0.1");
     nextResponse.cookies.set("sessionKey", sessionKey, {
         httpOnly: true,
-        secure: process.env.NODE_ENV !== "development",
+        secure: !isLocalhost,
         maxAge: 60 * 60 * 24 * 7, // 1 week
         path: "/",
     });
